@@ -3,10 +3,7 @@ use macroquad::prelude::*;
 #[macroquad::main("goobs")]
 async fn main() {
     let world = World {
-        palette: Palette {
-            background: Color::new(0.1, 0.1, 0.15, 1.0),
-            goob: LIGHTGRAY,
-        },
+        palette: Palette::default(),
         goobs: (0..7).map(|_| Goob::random()).collect(),
     };
 
@@ -27,14 +24,35 @@ fn draw_world(world: &World) {
             goob.siz.w,
             goob.siz.h,
             0.0,
-            world.palette.goob,
+            goob_color(goob, &world.palette),
         );
+    }
+}
+
+fn goob_color(goob: &Goob, palette: &Palette) -> Color {
+    match goob.health_level() {
+        HealthLevel::Healthy => palette.goob_healthy,
+        HealthLevel::Groggy => palette.goob_groggy,
+        HealthLevel::Dying => palette.goob_dying,
     }
 }
 
 struct Palette {
     background: Color,
-    goob: Color,
+    goob_healthy: Color,
+    goob_groggy: Color,
+    goob_dying: Color,
+}
+
+impl Default for Palette {
+    fn default() -> Palette {
+        Palette {
+            background: Color::new(0.1, 0.1, 0.15, 1.0),
+            goob_healthy: WHITE,
+            goob_groggy: LIGHTGRAY,
+            goob_dying: DARKGRAY,
+        }
+    }
 }
 
 struct Pos {
@@ -64,9 +82,26 @@ impl Siz {
     }
 }
 
+enum HealthLevel {
+    Healthy,
+    Groggy,
+    Dying,
+}
+
+struct Health {
+    value: u32,
+}
+
+impl Health {
+    fn random() -> Health {
+        Health { value: 100 }
+    }
+}
+
 struct Goob {
     pos: Pos,
     siz: Siz,
+    health: Health,
 }
 
 impl Goob {
@@ -74,6 +109,15 @@ impl Goob {
         Goob {
             pos: Pos::random(),
             siz: Siz::random(),
+            health: Health::random(),
+        }
+    }
+
+    fn health_level(&self) -> HealthLevel {
+        match self.health.value {
+            0..20 => HealthLevel::Dying,
+            20..80 => HealthLevel::Groggy,
+            _ => HealthLevel::Healthy,
         }
     }
 }
